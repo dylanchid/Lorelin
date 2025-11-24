@@ -14,6 +14,8 @@ import { AppealLetterTemplate } from './components/templates/AppealLetterTemplat
 import { ReconsiderationLetterTemplate } from './components/templates/ReconsiderationLetterTemplate';
 import { VisitsScreen } from './components/VisitsScreen';
 import { VisitDetailScreen } from './components/VisitDetailScreen';
+import { VisitRecordScreen } from './components/VisitRecordScreen';
+import { VisitApprovedScreen } from './components/VisitApprovedScreen';
 
 function Text() {
   return (
@@ -73,7 +75,7 @@ function List({ currentView, onNavigate, onNavigateToIntake, onNavigateToTemplat
   return (
     <div className="absolute content-stretch flex flex-col gap-[4px] h-[156px] items-start left-[12px] top-[80px] w-[232px]">
       <Button label="Dashboard" active={currentView === 'today'} onClick={() => onNavigate('today')} />
-      <Button label="Visits" active={currentView === 'visits' || currentView === 'visit-detail'} onClick={() => onNavigate('visits')} />
+      <Button label="Visits" active={currentView === 'visits' || currentView === 'visit-detail' || currentView === 'visit-record' || currentView === 'visit-approved'} onClick={() => onNavigate('visits')} />
       <Button label="Disputes" active={currentView === 'disputes' || currentView.startsWith('case-detail')} onClick={() => onNavigate('disputes')} />
       <Button label="Diagnostics" active={currentView === 'intake'} onClick={onNavigateToIntake} />
       <Button label="Templates" active={currentView === 'templates' || currentView.startsWith('template-')} onClick={onNavigateToTemplates} />
@@ -194,7 +196,7 @@ function Sidebar({ currentView, onNavigate, onNavigateToIntake, onNavigateToTemp
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'today' | 'disputes' | 'visits' | 'visit-detail' | 'intake' | 'templates' | 'template-1' | 'template-2' | 'template-3' | 'template-4' | 'case-detail' | 'case-detail-idr' | 'case-detail-appeal' | 'design-system'>('today');
+  const [currentView, setCurrentView] = useState<'today' | 'disputes' | 'visits' | 'visit-detail' | 'visit-record' | 'visit-approved' | 'intake' | 'templates' | 'template-1' | 'template-2' | 'template-3' | 'template-4' | 'case-detail' | 'case-detail-idr' | 'case-detail-appeal' | 'design-system'>('today');
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
 
   const handleOpenCase = (id: string) => {
@@ -227,6 +229,14 @@ export default function App() {
     setCurrentView('visit-detail');
   };
 
+  const handleRecordVisit = (visitId: string) => {
+    setCurrentView('visit-record');
+  };
+
+  const handleSendToAthena = (visitId: string) => {
+    setCurrentView('visit-approved');
+  };
+
   const handleBackToVisits = () => {
     setCurrentView('visits');
   };
@@ -240,9 +250,13 @@ export default function App() {
         {currentView === 'today' ? (
           <TodayScreen onOpenCase={handleOpenCase} />
         ) : currentView === 'visits' ? (
-          <VisitsScreen onViewVisit={handleViewVisit} />
+          <VisitsScreen onViewVisit={handleViewVisit} onRecordVisit={handleRecordVisit} onSendToAthena={handleSendToAthena} />
         ) : currentView === 'visit-detail' ? (
           <VisitDetailScreen onBack={handleBackToVisits} />
+        ) : currentView === 'visit-record' ? (
+          <VisitRecordScreen onBack={handleBackToVisits} />
+        ) : currentView === 'visit-approved' ? (
+          <VisitApprovedScreen onBack={handleBackToVisits} />
         ) : currentView === 'disputes' ? (
           <DisputesScreen onOpenCase={handleOpenCase} />
         ) : currentView === 'intake' ? (

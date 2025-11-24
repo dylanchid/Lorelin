@@ -16,9 +16,11 @@ interface Visit {
 
 interface VisitsScreenProps {
   onViewVisit: (visitId: string) => void;
+  onRecordVisit: (visitId: string) => void;
+  onSendToAthena: (visitId: string) => void;
 }
 
-export function VisitsScreen({ onViewVisit }: VisitsScreenProps) {
+export function VisitsScreen({ onViewVisit, onRecordVisit, onSendToAthena }: VisitsScreenProps) {
   const [activeTab, setActiveTab] = useState<StatusTab>('all');
   const [dateFilter, setDateFilter] = useState('today');
   const [providerFilter, setProviderFilter] = useState('all');
@@ -78,7 +80,10 @@ export function VisitsScreen({ onViewVisit }: VisitsScreenProps) {
   const getActionButton = (visit: Visit) => {
     if (visit.status === 'to-record') {
       return (
-        <button className="flex items-center justify-end gap-1.5 px-3 py-1.5 text-[12px] text-blue-600 hover:text-blue-700 font-medium ml-auto">
+        <button
+          onClick={() => onRecordVisit(visit.id)}
+          className="flex items-center justify-end gap-1.5 px-3 py-1.5 text-[12px] text-blue-600 hover:text-blue-700 font-medium ml-auto"
+        >
           <Mic className="size-3.5" />
           Record
         </button>
@@ -96,7 +101,10 @@ export function VisitsScreen({ onViewVisit }: VisitsScreenProps) {
     }
     if (visit.status === 'approved') {
       return (
-        <button className="px-3 py-1.5 text-[12px] text-blue-600 hover:text-blue-700 font-medium ml-auto whitespace-nowrap">
+        <button
+          onClick={() => onSendToAthena(visit.id)}
+          className="px-3 py-1.5 text-[12px] text-blue-600 hover:text-blue-700 font-medium ml-auto whitespace-nowrap"
+        >
           Send to Athena
         </button>
       );
