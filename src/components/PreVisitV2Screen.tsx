@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { ChevronDown, ChevronRight, Loader2, Search, Check, X } from 'lucide-react';
-import { EligibilityCheckModal } from './EligibilityCheckModal';
-import { PreAuthModal } from './PreAuthModal';
+import { EligibilityShelf } from './EligibilityShelf';
+import { PreAuthShelf } from './PreAuthShelf';
 
 type TimeFilter = '3' | '7' | '14';
 type RiskFilter = 'all' | 'at-risk' | 'blocked';
@@ -36,8 +36,8 @@ export function PreVisitV2Screen() {
   const [stepFilter, setStepFilter] = useState<StepFilter>('all');
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [runningItems, setRunningItems] = useState<string[]>([]);
-  const [modalType, setModalType] = useState<ModalType>(null);
-  const [selectedItem, setSelectedItem] = useState<PreVisitItem | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const [expandedType, setExpandedType] = useState<'eligibility' | 'preauth' | null>(null);
 
   // Mock data
   const preVisitItems: PreVisitItem[] = [
@@ -173,12 +173,19 @@ export function PreVisitV2Screen() {
     const item = preVisitItems.find(i => i.id === itemId);
     if (!item) return;
     
+    // Toggle: if clicking on the same row, collapse it
+    if (expandedRowId === itemId) {
+      setExpandedRowId(null);
+      setExpandedType(null);
+      return;
+    }
+    
     if (step === 'eligibility-pending' || step === 'eligibility-failed') {
-      setSelectedItem(item);
-      setModalType('eligibility');
+      setExpandedRowId(itemId);
+      setExpandedType('eligibility');
     } else if (step === 'auth-needed' || step === 'auth-pending') {
-      setSelectedItem(item);
-      setModalType('preauth');
+      setExpandedRowId(itemId);
+      setExpandedType('preauth');
     }
   };
 
@@ -507,68 +514,109 @@ export function PreVisitV2Screen() {
               </thead>
               <tbody>
                 {filteredItems.map((item) => (
-                  <tr 
-                    key={item.id} 
-                    className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer group"
-                  >
-                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selectedRows.includes(item.id)}
-                        onChange={() => handleRowSelect(item.id)}
-                        className="size-4 rounded border-gray-300 text-[#101828] focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[13px] font-medium text-[#101828] tracking-[-0.15px]">
-                          {item.patientName}
-                        </span>
-                        <span className="text-[12px] text-[#6a7282] tracking-[-0.15px]">
-                          Visit · {item.visitReason}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-medium border ${getStepPillStyle(item.step)}`}>
-                          {getStepLabel(item.step)}
-                        </span>
-                        {runningItems.includes(item.id) && (
-                          <Loader2 className="size-3.5 text-[#6a7282] animate-spin" />
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[13px] text-[#4a5565] tracking-[-0.15px]">
-                          {item.provider}
-                        </span>
-                        <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-[11px] font-medium w-fit">
-                          {item.payer}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[13px] text-[#4a5565] tracking-[-0.15px]">
-                          {item.visitDate} · {item.visitTime}
-                        </span>
-                        <span className="text-[11px] text-[#6a7282]">
-                          {item.urgency}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      <button
-                        onClick={(e) => handleActionClick(e, item.id, item.step)}
-                        className="inline-flex items-center gap-1 text-[13px] text-[#4a5565] hover:text-[#101828] transition-colors group-hover:text-[#101828]"
-                      >
-                        <span>{getActionLabel(item.step, item.id)}</span>
-                        {!runningItems.includes(item.id) && <ChevronRight className="size-3.5" />}
-                      </button>
-                    </td>
-                  </tr>
+                  <Fragment key={item.id}>
+                    <tr 
+                      className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer group"
+                    >
+                      <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedRows.includes(item.id)}
+                          onChange={() => handleRowSelect(item.id)}
+                          className="size-4 rounded border-gray-300 text-[#101828] focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[13px] font-medium text-[#101828] tracking-[-0.15px]">
+                            {item.patientName}
+                          </span>
+                          <span className="text-[12px] text-[#6a7282] tracking-[-0.15px]">
+                            Visit · {item.visitReason}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-medium border ${getStepPillStyle(item.step)}`}>
+                            {getStepLabel(item.step)}
+                          </span>
+                          {runningItems.includes(item.id) && (
+                            <Loader2 className="size-3.5 text-[#6a7282] animate-spin" />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[13px] text-[#4a5565] tracking-[-0.15px]">
+                            {item.provider}
+                          </span>
+                          <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-[11px] font-medium w-fit">
+                            {item.payer}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[13px] text-[#4a5565] tracking-[-0.15px]">
+                            {item.visitDate} · {item.visitTime}
+                          </span>
+                          <span className="text-[11px] text-[#6a7282]">
+                            {item.urgency}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-right">
+                        <button
+                          onClick={(e) => handleActionClick(e, item.id, item.step)}
+                          className="inline-flex items-center gap-1 text-[13px] text-[#4a5565] hover:text-[#101828] transition-colors group-hover:text-[#101828]"
+                        >
+                          <span>{getActionLabel(item.step, item.id)}</span>
+                          {!runningItems.includes(item.id) && <ChevronRight className="size-3.5" />}
+                        </button>
+                      </td>
+                    </tr>
+                    
+                    {/* Expanded shelf row */}
+                    {expandedRowId === item.id && expandedType === 'eligibility' && (
+                      <tr key={`${item.id}-shelf`}>
+                        <td colSpan={6} className="p-0">
+                          <EligibilityShelf
+                            patientName={item.patientName}
+                            payer={item.payer}
+                            visitDate={item.visitDate}
+                            memberId={item.memberId}
+                            groupNumber={item.groupNumber}
+                            onComplete={() => {
+                              setExpandedRowId(null);
+                              setExpandedType(null);
+                              console.log('Eligibility check completed for', item.id);
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                    
+                    {expandedRowId === item.id && expandedType === 'preauth' && (
+                      <tr key={`${item.id}-shelf`}>
+                        <td colSpan={6} className="p-0">
+                          <PreAuthShelf
+                            patientName={item.patientName}
+                            payer={item.payer}
+                            visitDate={item.visitDate}
+                            visitReason={item.visitReason}
+                            memberId={item.memberId}
+                            groupNumber={item.groupNumber}
+                            onComplete={() => {
+                              setExpandedRowId(null);
+                              setExpandedType(null);
+                              console.log('Pre-auth submitted for', item.id);
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -576,44 +624,6 @@ export function PreVisitV2Screen() {
         </div>
 
       </div>
-      
-      {/* Modals */}
-      {modalType === 'eligibility' && selectedItem && (
-        <EligibilityCheckModal
-          patientName={selectedItem.patientName}
-          payer={selectedItem.payer}
-          visitDate={selectedItem.visitDate}
-          memberId={selectedItem.memberId}
-          groupNumber={selectedItem.groupNumber}
-          onClose={() => {
-            setModalType(null);
-            setSelectedItem(null);
-          }}
-          onComplete={() => {
-            // TODO: Update the item step to ready or another status
-            console.log('Eligibility check completed for', selectedItem.id);
-          }}
-        />
-      )}
-      
-      {modalType === 'preauth' && selectedItem && (
-        <PreAuthModal
-          patientName={selectedItem.patientName}
-          payer={selectedItem.payer}
-          visitDate={selectedItem.visitDate}
-          visitReason={selectedItem.visitReason}
-          memberId={selectedItem.memberId}
-          groupNumber={selectedItem.groupNumber}
-          onClose={() => {
-            setModalType(null);
-            setSelectedItem(null);
-          }}
-          onComplete={() => {
-            // TODO: Update the item step to auth-pending or auth-approved
-            console.log('Pre-auth submitted for', selectedItem.id);
-          }}
-        />
-      )}
     </div>
   );
 }
