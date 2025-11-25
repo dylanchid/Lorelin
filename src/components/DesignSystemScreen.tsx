@@ -18,12 +18,10 @@ export function DesignSystemScreen() {
           <div className="grid grid-cols-2 gap-8">
             {/* Primary Logo */}
             <div className="border border-gray-200 rounded-lg p-8 bg-white">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-black rounded-full size-[40px] flex items-center justify-center">
-                  <span className="text-white text-[14px] font-normal">GP</span>
-                </div>
-                <span className="text-[20px] font-semibold text-[#101828] tracking-[-0.02em]">Lorelin</span>
+              <div className="size-[48px] rounded-lg bg-[#101828] flex items-center justify-center mb-3">
+                <span className="text-white text-[14px] font-normal">GP</span>
               </div>
+              <span className="text-[20px] font-semibold text-[#101828] tracking-[-0.02em]">Lorelin</span>
               <p className="text-[11px] text-[#99A1AF] mt-4">Primary logo · Use on light backgrounds (navigation, headers)</p>
             </div>
 
@@ -75,9 +73,9 @@ export function DesignSystemScreen() {
             <h3 className="text-[14px] font-medium text-[#101828] mb-4">Brand / Primary</h3>
             <div className="grid grid-cols-7 gap-4">
               {[
-                { name: 'Primary/50', hex: '#EFF6FF', token: '--color-primary-50', desc: 'Hover backgrounds' },
-                { name: 'Primary/500', hex: '#3B82F6', token: '--color-primary-500', desc: 'Main brand color' },
-                { name: 'Primary/700', hex: '#1D4ED8', token: '--color-primary-700', desc: 'Active states' },
+                { name: 'Primary/50', hex: '#DCFCF3', token: '--color-primary-50', desc: 'Hover backgrounds' },
+                { name: 'Primary/500', hex: '#0C5E47', token: '--color-primary-500', desc: 'Main brand color' },
+                { name: 'Primary/700', hex: '#047857', token: '--color-primary-700', desc: 'Active states' },
               ].map((color) => (
                 <div key={color.name}>
                   <div 

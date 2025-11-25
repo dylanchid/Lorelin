@@ -17,6 +17,7 @@ import { VisitDetailScreen } from './components/VisitDetailScreen';
 import { VisitRecordScreen } from './components/VisitRecordScreen';
 import { VisitApprovedScreen } from './components/VisitApprovedScreen';
 import { EligibilityScreen } from './components/EligibilityScreen';
+import { PreVisitV2Screen } from './components/PreVisitV2Screen';
 
 function Text() {
   return (
@@ -75,8 +76,9 @@ function Button({ label, active, onClick }: { label: string; active?: boolean; o
 function List({ currentView, onNavigate, onNavigateToEligibility, onNavigateToIntake, onNavigateToTemplates }: { currentView: string; onNavigate: (view: 'today' | 'disputes' | 'visits') => void; onNavigateToEligibility: () => void; onNavigateToIntake: () => void; onNavigateToTemplates: () => void }) {
   return (
     <div className="absolute content-stretch flex flex-col gap-[4px] items-start left-[12px] top-[80px] w-[232px]">
-      <Button label="Dashboard" active={currentView === 'today'} onClick={() => onNavigate('today')} />
-      <Button label="Eligibility" active={currentView === 'eligibility'} onClick={onNavigateToEligibility} />
+      <Button label="Home" active={currentView === 'today'} onClick={() => onNavigate('today')} />
+      <Button label="Pre-Visit" active={currentView === 'eligibility'} onClick={onNavigateToEligibility} />
+      <Button label="Pre-Visit v2" active={currentView === 'pre-visit-v2'} onClick={() => onNavigate('pre-visit-v2' as any)} />
       <Button label="Visits" active={currentView === 'visits' || currentView === 'visit-detail' || currentView === 'visit-record' || currentView === 'visit-approved'} onClick={() => onNavigate('visits')} />
       <Button label="Disputes" active={currentView === 'disputes' || currentView.startsWith('case-detail')} onClick={() => onNavigate('disputes')} />
       <Button label="Diagnostics" active={currentView === 'intake'} onClick={onNavigateToIntake} />
@@ -198,7 +200,7 @@ function Sidebar({ currentView, onNavigate, onNavigateToEligibility, onNavigateT
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'today' | 'disputes' | 'visits' | 'eligibility' | 'visit-detail' | 'visit-record' | 'visit-approved' | 'intake' | 'templates' | 'template-1' | 'template-2' | 'template-3' | 'template-4' | 'case-detail' | 'case-detail-idr' | 'case-detail-appeal' | 'design-system'>('today');
+  const [currentView, setCurrentView] = useState<'today' | 'disputes' | 'visits' | 'eligibility' | 'pre-visit-v2' | 'visit-detail' | 'visit-record' | 'visit-approved' | 'intake' | 'templates' | 'template-1' | 'template-2' | 'template-3' | 'template-4' | 'case-detail' | 'case-detail-idr' | 'case-detail-appeal' | 'design-system'>('today');
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
 
   const handleOpenCase = (id: string) => {
@@ -263,6 +265,8 @@ export default function App() {
           <DisputesScreen onOpenCase={handleOpenCase} />
         ) : currentView === 'eligibility' ? (
           <EligibilityScreen />
+        ) : currentView === 'pre-visit-v2' ? (
+          <PreVisitV2Screen />
         ) : currentView === 'intake' ? (
           <IntakeScreen />
         ) : currentView === 'templates' ? (

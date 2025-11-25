@@ -522,7 +522,7 @@ export function ResultsView() {
                 Next steps with Lorelin
               </h3>
               <p className="text-[14px] text-blue-50 mb-6 max-w-[600px] leading-[1.5]">
-                This diagnostic identified $127,500 in recoverable revenue. Here's how our platform can help you capture it:
+                You've just unlocked powerful insights into your claims. Here are some ways to put this data to work:
               </p>
               <div className="space-y-3 mb-6">
                 <div className="flex items-start gap-3">
