@@ -123,6 +123,10 @@ CREATE INDEX IF NOT EXISTS idx_eligibilities_status ON eligibilities(status);
 ALTER TABLE authorizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE eligibilities ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist, then create new ones
+DROP POLICY IF EXISTS "Allow all operations for service role" ON authorizations;
+DROP POLICY IF EXISTS "Allow all operations for service role" ON eligibilities;
+
 -- Create permissive policies for service role (backend access)
 CREATE POLICY "Allow all operations for service role" ON authorizations
   FOR ALL
