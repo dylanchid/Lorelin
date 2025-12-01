@@ -149,13 +149,13 @@ WHERE e.payer IS NOT NULL
   )
 ON CONFLICT DO NOTHING;
 
--- Also from disputes
+-- Also from disputes (CRITICAL: use payer_name, not payer)
 INSERT INTO payers (name)
-SELECT DISTINCT d.payer
+SELECT DISTINCT d.payer_name
 FROM disputes d
-WHERE d.payer IS NOT NULL
+WHERE d.payer_name IS NOT NULL
   AND NOT EXISTS (
-    SELECT 1 FROM payers p WHERE p.name = d.payer
+    SELECT 1 FROM payers p WHERE p.name = d.payer_name
   )
 ON CONFLICT DO NOTHING;
 
@@ -284,11 +284,11 @@ FROM patients p
 WHERE d.patient_name = p.full_name
   AND d.patient_id IS NULL;
 
--- Link disputes to payers
+-- Link disputes to payers (CRITICAL: use payer_name, not payer)
 UPDATE disputes d
 SET payer_id = py.id
 FROM payers py
-WHERE d.payer = py.name
+WHERE d.payer_name = py.name
   AND d.payer_id IS NULL;
 
 -- ============================================================================
