@@ -15,9 +15,8 @@
 -- ============================================================================
 
 -- Insert unique patients from visits table
-INSERT INTO patients (full_name, first_name, last_name, member_id)
+INSERT INTO patients (first_name, last_name, member_id)
 SELECT DISTINCT
-  v.patient_name as full_name,
   -- Try to split name (assumes "First Last" format)
   SPLIT_PART(v.patient_name, ' ', 1) as first_name,
   CASE 
@@ -34,9 +33,8 @@ WHERE v.patient_name IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 -- Also get patients from authorizations (in case they're not in visits)
-INSERT INTO patients (full_name, first_name, last_name, patient_id)
+INSERT INTO patients (first_name, last_name, patient_id)
 SELECT DISTINCT
-  a.patient_name as full_name,
   SPLIT_PART(a.patient_name, ' ', 1) as first_name,
   CASE 
     WHEN LENGTH(a.patient_name) - LENGTH(REPLACE(a.patient_name, ' ', '')) > 0
@@ -52,9 +50,8 @@ WHERE a.patient_name IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 -- Also get patients from eligibilities
-INSERT INTO patients (full_name, first_name, last_name, member_id)
+INSERT INTO patients (first_name, last_name, member_id)
 SELECT DISTINCT
-  e.patient_name as full_name,
   SPLIT_PART(e.patient_name, ' ', 1) as first_name,
   CASE 
     WHEN LENGTH(e.patient_name) - LENGTH(REPLACE(e.patient_name, ' ', '')) > 0
@@ -70,9 +67,8 @@ WHERE e.patient_name IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 -- Also get patients from disputes (if patient_name field exists)
-INSERT INTO patients (full_name, first_name, last_name)
+INSERT INTO patients (first_name, last_name)
 SELECT DISTINCT
-  d.patient_name as full_name,
   SPLIT_PART(d.patient_name, ' ', 1) as first_name,
   CASE 
     WHEN LENGTH(d.patient_name) - LENGTH(REPLACE(d.patient_name, ' ', '')) > 0
