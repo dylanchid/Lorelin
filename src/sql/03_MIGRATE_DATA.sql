@@ -33,15 +33,14 @@ WHERE v.patient_name IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 -- Also get patients from authorizations (in case they're not in visits)
-INSERT INTO patients (first_name, last_name, patient_id)
+INSERT INTO patients (first_name, last_name)
 SELECT DISTINCT
   SPLIT_PART(a.patient_name, ' ', 1) as first_name,
   CASE 
     WHEN LENGTH(a.patient_name) - LENGTH(REPLACE(a.patient_name, ' ', '')) > 0
     THEN SUBSTRING(a.patient_name FROM POSITION(' ' IN a.patient_name) + 1)
     ELSE a.patient_name
-  END as last_name,
-  a.patient_id
+  END as last_name
 FROM authorizations a
 WHERE a.patient_name IS NOT NULL
   AND NOT EXISTS (
