@@ -88,6 +88,8 @@ function List({ currentView, onNavigate, onNavigateToPreVisit, onNavigateToIntak
       <Button label="Disputes" active={currentView === 'disputes' || currentView.startsWith('case-detail')} onClick={() => onNavigate('disputes')} />
       <Button label="Diagnostics" active={currentView === 'intake'} onClick={onNavigateToIntake} />
       <Button label="Templates" active={currentView === 'templates' || currentView.startsWith('template-')} onClick={onNavigateToTemplates} />
+      <Button label="VoB Demo" active={currentView === 'vob-demo'} onClick={() => onNavigate('vob-demo' as any)} />
+      <Button label="Parser" active={currentView === 'parser'} onClick={() => onNavigate('parser' as any)} />
     </div>
   );
 }
@@ -205,7 +207,7 @@ function Sidebar({ currentView, onNavigate, onNavigateToPreVisit, onNavigateToIn
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'today' | 'disputes' | 'visits' | 'eligibility' | 'pre-visit-v2' | 'visit-detail' | 'visit-record' | 'visit-approved' | 'intake' | 'templates' | 'template-1' | 'template-2' | 'template-3' | 'template-4' | 'case-detail' | 'case-detail-idr' | 'case-detail-appeal' | 'design-system'>('today');
+  const [currentView, setCurrentView] = useState<'today' | 'disputes' | 'visits' | 'pre-visit' | 'auth-workspace' | 'eligibility-workspace' | 'doc-coding' | 'parser' | 'visit-detail' | 'visit-record' | 'visit-approved' | 'intake' | 'templates' | 'template-1' | 'template-2' | 'template-3' | 'template-4' | 'case-detail' | 'case-detail-idr' | 'case-detail-appeal' | 'design-system' | 'vob-demo'>('today');
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [authStatus, setAuthStatus] = useState<'needed' | 'draft-ready' | 'submitted' | 'approved' | 'denied'>('draft-ready');
   const [eligibilityData, setEligibilityData] = useState<any>(null);
