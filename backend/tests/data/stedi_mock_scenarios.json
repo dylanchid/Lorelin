@@ -1,0 +1,64 @@
+[
+    {
+        "name": "Active Coverage with Financials",
+        "request": {
+            "tradingPartnerServiceId": "PAYER123",
+            "provider": {
+                "npi": "1234567890"
+            },
+            "subscriber": {
+                "memberId": "MEM123",
+                "firstName": "John",
+                "lastName": "Doe",
+                "dateOfBirth": "19800101"
+            }
+        },
+        "expected_status": "active",
+        "mock_response": {
+            "controlNumber": "CTRL-123",
+            "eligibilitySearchId": "SRCH-456",
+            "planStatus": [
+                {
+                    "statusCode": "1",
+                    "status": "Active",
+                    "planDetails": "Gold PPO"
+                }
+            ],
+            "benefitsInformation": [
+                {
+                    "code": "30",
+                    "name": "Health Benefit Plan Coverage",
+                    "coverageLevel": "INDIVIDUAL",
+                    "amounts": {
+                        "deductible": {
+                            "inNetwork": {
+                                "total": 1000.00,
+                                "remaining": 500.00
+                            },
+                            "outOfNetwork": {
+                                "total": 2000.00,
+                                "remaining": 2000.00
+                            }
+                        },
+                        "outOfPocket": {
+                            "inNetwork": {
+                                "total": 5000.00,
+                                "remaining": 4500.00
+                            }
+                        },
+                        "copay": {
+                            "inNetwork": {
+                                "amount": 25.00
+                            }
+                        },
+                        "coinsurance": {
+                            "inNetwork": {
+                                "percentage": 20.0
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
+]

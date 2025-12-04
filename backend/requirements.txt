@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+sqlmodel
+psycopg2-binary
+python-multipart
+requests
+python-dotenv
+pytest
+httpx
+redis
+pytest-asyncio
+playwright
+browserbase
+anthropic
+google-generativeai
+alembic
+

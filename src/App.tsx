@@ -18,6 +18,7 @@ import { VisitRecordScreen } from './components/VisitRecordScreen';
 import { VisitApprovedScreen } from './components/VisitApprovedScreen';
 import { EligibilityScreen } from './components/EligibilityScreen';
 import { PreVisitV2Screen } from './components/PreVisitV2Screen';
+import { VoBDemoScreen } from './components/VoBDemoScreen';
 
 function Text() {
   return (
@@ -83,6 +84,7 @@ function List({ currentView, onNavigate, onNavigateToEligibility, onNavigateToIn
       <Button label="Disputes" active={currentView === 'disputes' || currentView.startsWith('case-detail')} onClick={() => onNavigate('disputes')} />
       <Button label="Diagnostics" active={currentView === 'intake'} onClick={onNavigateToIntake} />
       <Button label="Templates" active={currentView === 'templates' || currentView.startsWith('template-')} onClick={onNavigateToTemplates} />
+      <Button label="VoB Demo" active={currentView === 'vob-demo'} onClick={() => onNavigate('vob-demo' as any)} />
     </div>
   );
 }
@@ -200,7 +202,7 @@ function Sidebar({ currentView, onNavigate, onNavigateToEligibility, onNavigateT
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'today' | 'disputes' | 'visits' | 'eligibility' | 'pre-visit-v2' | 'visit-detail' | 'visit-record' | 'visit-approved' | 'intake' | 'templates' | 'template-1' | 'template-2' | 'template-3' | 'template-4' | 'case-detail' | 'case-detail-idr' | 'case-detail-appeal' | 'design-system'>('today');
+  const [currentView, setCurrentView] = useState<'today' | 'disputes' | 'visits' | 'eligibility' | 'pre-visit-v2' | 'visit-detail' | 'visit-record' | 'visit-approved' | 'intake' | 'templates' | 'template-1' | 'template-2' | 'template-3' | 'template-4' | 'case-detail' | 'case-detail-idr' | 'case-detail-appeal' | 'design-system' | 'vob-demo'>('today');
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
 
   const handleOpenCase = (id: string) => {
@@ -285,6 +287,8 @@ export default function App() {
           <CaseDetailAppeal onBack={handleBackToDisputes} />
         ) : currentView === 'design-system' ? (
           <DesignSystemScreen />
+        ) : currentView === 'vob-demo' ? (
+          <VoBDemoScreen />
         ) : (
           <CaseDetailScreen onBack={handleBackToDisputes} />
         )}
