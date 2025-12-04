@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Mic, Play } from 'lucide-react';
+import { getVisits, initVisits, Visit as APIVisit, diagnoseDatabase } from '../utils/api';
 
 type StatusTab = 'to-record' | 'to-review' | 'approved' | 'all';
 type VisitStatus = 'to-record' | 'transcribing' | 'to-review' | 'approved' | 'sent';
@@ -24,18 +25,84 @@ export function VisitsScreen({ onViewVisit, onRecordVisit, onSendToAthena }: Vis
   const [activeTab, setActiveTab] = useState<StatusTab>('all');
   const [dateFilter, setDateFilter] = useState('today');
   const [providerFilter, setProviderFilter] = useState('all');
+  const [visits, setVisits] = useState<Visit[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [diagnostics, setDiagnostics] = useState<any>(null);
 
-  // Mock data
-  const visits: Visit[] = [
-    { id: '1', patientName: 'Jane Doe', dateTime: 'Mar 2, 10:00 AM', provider: 'Dr. Lee', payer: 'Medicare', status: 'to-record', chargeEstimate: '$285' },
-    { id: '2', patientName: 'Robert Chen', dateTime: 'Mar 2, 10:30 AM', provider: 'Dr. Lee', payer: 'Aetna', status: 'to-record', chargeEstimate: '$320' },
-    { id: '3', patientName: 'Maria Garcia', dateTime: 'Mar 2, 11:00 AM', provider: 'Dr. Lee', payer: 'UHC', status: 'to-review', chargeEstimate: '$450' },
-    { id: '4', patientName: 'John Smith', dateTime: 'Mar 2, 11:30 AM', provider: 'Dr. Patel', payer: 'BCBS', status: 'to-review', chargeEstimate: '$380' },
-    { id: '5', patientName: 'Linda Brown', dateTime: 'Mar 2, 1:00 PM', provider: 'Dr. Lee', payer: 'Medicare', status: 'approved', chargeEstimate: '$295' },
-    { id: '6', patientName: 'David Wilson', dateTime: 'Mar 2, 1:30 PM', provider: 'Dr. Patel', payer: 'Cigna', status: 'approved', chargeEstimate: '$340' },
-    { id: '7', patientName: 'Sarah Johnson', dateTime: 'Mar 2, 2:00 PM', provider: 'Dr. Lee', payer: 'Medicare', status: 'sent', chargeEstimate: '$310' },
-    { id: '8', patientName: 'Michael Davis', dateTime: 'Mar 2, 2:30 PM', provider: 'Dr. Patel', payer: 'Aetna', status: 'transcribing', chargeEstimate: '$275' },
-  ];
+  useEffect(() => {
+    loadVisits();
+  }, []);
+
+  const loadVisits = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setDiagnostics(null);
+      
+      // Try to get visits
+      let response = await getVisits();
+      
+      // If no visits exist, initialize them
+      if (!response.visits || response.visits.length === 0) {
+        console.log('No visits found, initializing...');
+        await initVisits();
+        response = await getVisits();
+      }
+      
+      // Transform API data to component format
+      const transformedVisits: Visit[] = response.visits.map((v: APIVisit) => ({
+        id: v.id,
+        patientName: v.patient_name,
+        dateTime: `${formatDate(v.visit_date)}, ${v.visit_time}`,
+        provider: v.provider,
+        payer: v.payer,
+        status: v.status,
+        chargeEstimate: `$${v.charge_estimate}`,
+      }));
+      
+      setVisits(transformedVisits);
+    } catch (err) {
+      console.error('Error loading visits:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load visits';
+      
+      // Run diagnostics when error occurs
+      try {
+        const diagData = await diagnoseDatabase();
+        setDiagnostics(diagData);
+        console.log('Diagnostics:', diagData);
+      } catch (diagErr) {
+        console.error('Failed to run diagnostics:', diagErr);
+      }
+      
+      // Check if it's a schema cache error
+      if (errorMessage.includes('schema cache') || errorMessage.includes('PGRST205')) {
+        setError('SCHEMA_CACHE_ERROR');
+      }
+      // Check if it's a table not found error
+      else if (errorMessage.includes('Could not find the table') || errorMessage.includes('relation') || errorMessage.includes('does not exist')) {
+        setError('DATABASE_NOT_SETUP');
+      } else {
+        setError(errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const visitDate = new Date(date);
+    visitDate.setHours(0, 0, 0, 0);
+    
+    if (visitDate.getTime() === today.getTime()) {
+      return 'Today';
+    }
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
 
   // Pipeline stats
   const stats = {
@@ -123,6 +190,149 @@ export function VisitsScreen({ onViewVisit, onRecordVisit, onSendToAthena }: Vis
     <div className="size-full overflow-auto bg-[#f5f5f7]">
       <div className="max-w-[1600px] mx-auto px-[60px] py-[60px]">
         
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#101828] mx-auto mb-4"></div>
+              <p className="text-[13px] text-[#6a7282]">Loading visits...</p>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+            {error === 'DATABASE_NOT_SETUP' ? (
+              <>
+                <h3 className="text-[15px] font-semibold text-red-800 mb-2">Database Setup Required</h3>
+                <p className="text-[13px] text-red-700 mb-4">
+                  The visits table hasn't been created in Supabase yet. Please follow these steps:
+                </p>
+                <ol className="list-decimal list-inside space-y-2 text-[13px] text-red-700 mb-4">
+                  <li>Open your Supabase dashboard</li>
+                  <li>Navigate to SQL Editor</li>
+                  <li>Run the SQL from <code className="bg-red-100 px-1 py-0.5 rounded">SUPABASE_SETUP.md</code></li>
+                </ol>
+                <div className="bg-red-100 rounded p-3 mb-4">
+                  <p className="text-[11px] font-medium text-red-900 mb-2">Quick SQL:</p>
+                  <pre className="text-[10px] text-red-800 overflow-x-auto whitespace-pre-wrap">
+{`CREATE TABLE visits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_name TEXT NOT NULL,
+  patient_age INTEGER,
+  visit_date DATE NOT NULL,
+  visit_time TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  payer TEXT NOT NULL,
+  visit_reason TEXT NOT NULL,
+  status TEXT NOT NULL,
+  charge_estimate INTEGER NOT NULL,
+  member_id TEXT,
+  group_number TEXT,
+  pre_visit_step TEXT,
+  pre_visit_risk TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE visits ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all" ON visits FOR ALL USING (true);
+
+NOTIFY pgrst, 'reload schema';`}
+                  </pre>
+                </div>
+                <button 
+                  onClick={loadVisits}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg text-[12px] font-medium hover:bg-red-700 transition-colors"
+                >
+                  Retry After Setup
+                </button>
+              </>
+            ) : error === 'SCHEMA_CACHE_ERROR' ? (
+              <>
+                <h3 className="text-[15px] font-semibold text-amber-800 mb-2">⚠️ Schema Cache Refresh Needed</h3>
+                <p className="text-[13px] text-amber-700 mb-4">
+                  The visits table exists, but Supabase's API needs to refresh its schema cache. Follow one of these options:
+                </p>
+                
+                {diagnostics && (
+                  <div className="bg-amber-100 border border-amber-300 rounded-lg p-3 mb-4">
+                    <p className="text-[11px] font-semibold text-amber-900 mb-2">Diagnostic Info:</p>
+                    <pre className="text-[10px] text-amber-800 overflow-x-auto">
+                      {JSON.stringify({
+                        errorCode: diagnostics.errorCode,
+                        errorMessage: diagnostics.error,
+                        tableExists: diagnostics.tableExists,
+                        canQuery: diagnostics.canQuery,
+                      }, null, 2)}
+                    </pre>
+                  </div>
+                )}
+                
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <p className="text-[12px] font-semibold text-amber-900 mb-3">Option 1: Reload Schema Cache (Recommended)</p>
+                  <ol className="list-decimal list-inside space-y-1.5 text-[12px] text-amber-800 mb-3">
+                    <li>Go to your <strong>Supabase Dashboard</strong></li>
+                    <li>Navigate to <strong>Settings → API</strong></li>
+                    <li>Scroll down and click <strong>\"Reload schema cache\"</strong> button</li>
+                    <li>Wait 10-15 seconds for the cache to fully reload</li>
+                    <li>Click Retry below</li>
+                  </ol>
+                </div>
+                
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <p className="text-[12px] font-semibold text-amber-900 mb-3">Option 2: Verify Table & Policy</p>
+                  <p className="text-[12px] text-amber-800 mb-2">Run this SQL in your Supabase SQL Editor to check the table:</p>
+                  <pre className="bg-amber-100 rounded p-2 text-[11px] text-amber-900 overflow-x-auto mb-3">
+{`-- Check table exists
+SELECT schemaname, tablename, tableowner, rowsecurity
+FROM pg_tables 
+WHERE tablename = 'visits';
+
+-- Check RLS policies
+SELECT schemaname, tablename, policyname
+FROM pg_policies 
+WHERE tablename = 'visits';`}
+                  </pre>
+                  <p className="text-[11px] text-amber-700 mb-2">If the table doesn't exist or has no policy, run:</p>
+                  <pre className="bg-amber-100 rounded p-2 text-[11px] text-amber-900 overflow-x-auto">
+{`CREATE POLICY \"Allow all operations on visits\" ON visits
+  FOR ALL USING (true) WITH CHECK (true);`}
+                  </pre>
+                </div>
+                
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <p className="text-[12px] font-semibold text-amber-900 mb-3">Option 3: Force Cache Reload via SQL</p>
+                  <p className="text-[12px] text-amber-800 mb-2">Run this in your Supabase SQL Editor:</p>
+                  <pre className="bg-amber-100 rounded p-2 text-[11px] text-amber-900 overflow-x-auto mb-2">
+                    NOTIFY pgrst, 'reload schema';
+                  </pre>
+                  <p className="text-[11px] text-amber-700">Wait 10 seconds, then click Retry below</p>
+                </div>
+                
+                <button 
+                  onClick={loadVisits}
+                  className="px-4 py-2 bg-amber-600 text-white rounded-lg text-[12px] font-medium hover:bg-amber-700 transition-colors"
+                >
+                  Retry After Refresh
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-[13px] text-red-700">Error loading visits: {error}</p>
+                <button 
+                  onClick={loadVisits}
+                  className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-[12px] font-medium hover:bg-red-700 transition-colors"
+                >
+                  Retry
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {!loading && !error && (
+          <>
         {/* Main white card */}
         <div className="bg-white border border-gray-200 rounded-lg">
           
@@ -376,6 +586,8 @@ export function VisitsScreen({ onViewVisit, onRecordVisit, onSendToAthena }: Vis
             </table>
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

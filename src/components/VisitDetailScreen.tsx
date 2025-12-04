@@ -6,7 +6,7 @@ interface VisitDetailScreenProps {
 }
 
 export function VisitDetailScreen({ onBack }: VisitDetailScreenProps) {
-  const [transcriptExpanded, setTranscriptExpanded] = useState(false);
+  const [transcriptExpanded, setTranscriptExpanded] = useState(true);
 
   // Function to scroll to a specific line in the transcript
   const scrollToTranscriptLine = (time: string) => {

@@ -1,150 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Calendar, ChevronDown } from 'lucide-react';
 import { DisputesTable } from './DisputesTable';
-
-// Mock data for disputes
-const mockDisputes = [
-  {
-    id: '1',
-    patient: { name: 'J. Martinez', claimId: 'Claim #18294' },
-    procedure: { name: 'Breast reconstruction', code: 'CPT 19357' },
-    payer: { name: 'Aetna PPO', planType: 'Self-funded' },
-    billed: 8200,
-    paid: 1050,
-    potential: 200,
-    contractExpected: 1250,
-    contractGap: 200,
-    type: 'OON - IDR' as const,
-    path: 'Federal IDR' as const,
-    issue: null,
-    status: 'Ready for IDR' as const,
-    nextAction: 'Generate IDR packet' as const,
-    deadline: { date: 'May 12', label: 'IDR filing' },
-    pathTooltip: 'OON ER service; NSA applies; plan appears self-funded → federal IDR candidate',
-    isUrgent: true,
-  },
-  {
-    id: '2',
-    patient: { name: 'S. Chen', claimId: 'Claim #18291' },
-    procedure: { name: 'Rhinoplasty', code: 'CPT 30400' },
-    payer: { name: 'UnitedHealthcare', planType: 'PPO' },
-    billed: 12500,
-    paid: 4200,
-    potential: 5800,
-    type: 'OON - Negotiation' as const,
-    path: 'State IDR' as const,
-    issue: null,
-    status: 'In negotiation' as const,
-    nextAction: 'Generate negotiation letter' as const,
-    deadline: { date: 'May 20', label: 'Response due' },
-    pathTooltip: 'State-regulated plan; state IDR process applies',
-    isUrgent: false,
-  },
-  {
-    id: '3',
-    patient: { name: 'M. Patel', claimId: 'Claim #18287' },
-    procedure: { name: 'Abdominoplasty', code: 'CPT 15830' },
-    payer: { name: 'Cigna HMO' },
-    billed: 9800,
-    paid: 3500,
-    potential: 4200,
-    type: 'INN - Denial appeal' as const,
-    path: 'Appeal only' as const,
-    issue: 'Med necessity denial' as const,
-    status: 'New' as const,
-    nextAction: 'Draft appeal' as const,
-    deadline: { date: 'Jun 2', label: 'Appeal deadline' },
-    pathTooltip: 'HMO plan; standard appeal process only',
-    isUrgent: false,
-  },
-  {
-    id: '4',
-    patient: { name: 'K. Williams', claimId: 'Claim #18283' },
-    procedure: { name: 'Facelift', code: 'CPT 30400' }, // Updated code to match user example
-    payer: { name: 'Blue Cross Blue Shield', planType: 'Self-funded' },
-    billed: 15200,
-    paid: 1650,
-    potential: 300,
-    contractExpected: 1950,
-    contractGap: 300,
-    type: 'INN - Underpayment' as const, // Changed to match user scenario (Contract Underpayment)
-    path: 'Appeal only' as const,
-    issue: 'Underpayment',
-    status: 'New' as const,
-    nextAction: 'Draft appeal' as const,
-    deadline: { date: 'May 28', label: 'Appeal deadline' },
-    pathTooltip: 'Paid below contract rate',
-    isUrgent: true,
-  },
-  {
-    id: '5',
-    patient: { name: 'D. Thompson', claimId: 'Claim #18279' },
-    procedure: { name: 'Liposuction', code: 'CPT 15876' },
-    payer: { name: 'Humana PPO' },
-    billed: 7500,
-    paid: 2800,
-    potential: 2900,
-    type: 'OON - Negotiation' as const,
-    path: 'State IDR' as const,
-    issue: null,
-    status: 'In negotiation' as const,
-    nextAction: 'Generate negotiation letter' as const,
-    deadline: { date: 'May 25', label: 'Negotiation period' },
-    pathTooltip: 'State-regulated plan; in active negotiation phase',
-    isUrgent: false,
-  },
-  {
-    id: '6',
-    patient: { name: 'R. Johnson', claimId: 'Claim #18275' },
-    procedure: { name: 'Blepharoplasty', code: 'CPT 15822' },
-    payer: { name: 'Kaiser Permanente' },
-    billed: 5600,
-    paid: 1900,
-    potential: 2400,
-    type: 'INN - Underpayment' as const,
-    path: 'Appeal only' as const,
-    issue: 'Downcoded' as const,
-    status: 'Appeal submitted' as const,
-    nextAction: 'Review result' as const,
-    deadline: { date: 'Jun 15', label: 'Decision expected' },
-    pathTooltip: 'HMO plan; appeal filed and pending review',
-    isUrgent: false,
-  },
-  {
-    id: '7',
-    patient: { name: 'A. Rodriguez', claimId: 'Claim #18301' },
-    procedure: { name: 'Breast augmentation', code: 'CPT 19324' },
-    payer: { name: 'Cigna PPO' },
-    billed: 11200,
-    paid: 5800,
-    potential: 4800,
-    type: 'INN - Denial appeal' as const,
-    path: 'Appeal only' as const,
-    issue: 'Prior auth' as const,
-    status: 'New' as const,
-    nextAction: 'Draft appeal' as const,
-    deadline: { date: 'May 28', label: 'Appeal deadline' },
-    pathTooltip: 'Prior authorization not obtained; appeal needed',
-    isUrgent: false,
-  },
-  {
-    id: '8',
-    patient: { name: 'L. Kim', claimId: 'Claim #18298' },
-    procedure: { name: 'Liposuction', code: 'CPT 15877' },
-    payer: { name: 'Aetna HMO' },
-    billed: 6800,
-    paid: 3200,
-    potential: 3100,
-    type: 'INN - Underpayment' as const,
-    path: 'Appeal only' as const,
-    issue: 'Underpayment' as const,
-    status: 'New' as const,
-    nextAction: 'Review & ignore' as const,
-    deadline: { date: 'No deadline', label: 'Low priority' },
-    pathTooltip: 'Underpayment case; may not be worth pursuing',
-    isUrgent: false,
-  },
-];
+import { getDisputes, initDisputes, type Dispute } from '../utils/api';
 
 type DisputeTypeFilter = 'all' | 'oon' | 'inn' | 'underpayment';
 
@@ -156,6 +13,78 @@ export function DisputesScreen({ onOpenCase }: DisputesScreenProps) {
   const [primaryView, setPrimaryView] = useState<'needs-attention' | 'all'>('needs-attention');
   const [disputeTypeFilter, setDisputeTypeFilter] = useState<DisputeTypeFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDisputes = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Initialize if needed
+        await initDisputes();
+        
+        // Fetch disputes
+        const response = await getDisputes();
+        setDisputes(response.disputes || []);
+      } catch (err) {
+        console.error('Error loading disputes:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load disputes');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDisputes();
+  }, []);
+
+  // Transform API disputes to table format
+  const transformedDisputes = disputes.map((d) => {
+    // Format deadline date
+    let deadlineDate = 'No deadline';
+    if (d.deadline_date) {
+      try {
+        const date = new Date(d.deadline_date);
+        deadlineDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } catch (e) {
+        console.error('Error parsing deadline date:', e);
+      }
+    }
+
+    return {
+      id: d.id,
+      patient: {
+        name: d.patient_name,
+        claimId: d.claim_id,
+      },
+      procedure: {
+        name: d.procedure_name,
+        code: d.procedure_code,
+      },
+      payer: {
+        name: d.payer_name,
+        planType: d.plan_type || undefined,
+      },
+      billed: d.billed,
+      paid: d.paid,
+      potential: d.potential,
+      contractExpected: d.contract_expected || undefined,
+      contractGap: d.contract_gap || undefined,
+      type: d.type as any,
+      path: d.path as any,
+      issue: d.issue,
+      status: d.status as any,
+      nextAction: d.next_action as any,
+      deadline: {
+        date: deadlineDate,
+        label: d.deadline_label || 'No deadline',
+      },
+      pathTooltip: d.path_tooltip || '',
+      isUrgent: d.is_urgent,
+    };
+  });
 
   return (
     <div className="overflow-auto size-full bg-[#f5f5f7]">
@@ -293,7 +222,21 @@ export function DisputesScreen({ onOpenCase }: DisputesScreenProps) {
               
               {/* Disputes Table */}
               <div className="w-full">
-                <DisputesTable disputes={mockDisputes} onOpenCase={onOpenCase} />
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-[13px] text-[#6a7282]">Loading disputes...</div>
+                  </div>
+                ) : error ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-[13px] text-red-600">Error: {error}</div>
+                  </div>
+                ) : transformedDisputes.length === 0 ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-[13px] text-[#6a7282]">No disputes found</div>
+                  </div>
+                ) : (
+                  <DisputesTable disputes={transformedDisputes} onOpenCase={onOpenCase} />
+                )}
               </div>
               
             </div>

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Mic, FileText, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
+import { getWorkItems, initWorkItems, type WorkItem as APIWorkItem } from '../utils/api';
 
 // Mock data for voice-to-cash over time
 const generateVoiceToCashData = (days: number) => {
@@ -50,85 +51,59 @@ interface WorkItem {
 
 interface TodayScreenProps {
   onOpenCase: (id: string) => void;
+  onOpenVisit: (id: string) => void;
 }
 
 type TimeFilter = '7' | '14' | '30' | '90';
 type TypeFilter = 'all' | 'visits' | 'claims';
 type StepFilter = 'all' | 'to-record' | 'to-review' | 'ready-to-send' | 'flagged';
 
-export function TodayScreen({ onOpenCase }: TodayScreenProps) {
+export function TodayScreen({ onOpenCase, onOpenVisit }: TodayScreenProps) {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('14');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [stepFilter, setStepFilter] = useState<StepFilter>('all');
+  const [workItems, setWorkItems] = useState<WorkItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock work items
-  const workItems: WorkItem[] = [
-    {
-      id: '1',
-      type: 'visit',
-      step: 'to-record',
-      patientName: 'Maria Garcia',
-      description: 'Visit · Retina follow-up',
-      provider: 'Dr. Lee',
-      payer: 'Medicare',
-      value: 380,
-      valueLabel: 'Est. allowed',
-      deadline: 'Today · 10:30 AM',
-      urgency: 'high',
-    },
-    {
-      id: '2',
-      type: 'visit',
-      step: 'to-review',
-      patientName: 'J. Martinez',
-      description: 'Visit · Post-op check',
-      provider: 'Dr. Kim',
-      payer: 'Aetna PPO',
-      value: 540,
-      valueLabel: 'Est. allowed',
-      deadline: 'Needs review today',
-      urgency: 'high',
-    },
-    {
-      id: '3',
-      type: 'claim',
-      step: 'flagged',
-      patientName: 'S. Chen',
-      description: 'Claim #20411 · AMD injection',
-      provider: 'Dr. Lee',
-      payer: 'Humana PPO',
-      value: 720,
-      valueLabel: 'at risk',
-      deadline: 'Response due in 2 days',
-      urgency: 'medium',
-    },
-    {
-      id: '4',
-      type: 'visit',
-      step: 'ready-to-send',
-      patientName: 'Linda Brown',
-      description: 'Visit · Annual exam',
-      provider: 'Dr. Patel',
-      payer: 'UHC',
-      value: 295,
-      valueLabel: 'Est. allowed',
-      deadline: 'Approved today',
-      urgency: 'low',
-    },
-    {
-      id: '5',
-      type: 'claim',
-      step: 'flagged',
-      patientName: 'K. Williams',
-      description: 'Claim #18294 · Surgical procedure',
-      provider: 'Dr. Kim',
-      payer: 'BCBS',
-      value: 1450,
-      valueLabel: 'at risk',
-      deadline: 'Filing closes today',
-      urgency: 'high',
-    },
-  ];
+  useEffect(() => {
+    const fetchWorkItems = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Initialize if needed
+        await initWorkItems();
+        
+        // Fetch work items with current filters
+        const response = await getWorkItems(typeFilter, stepFilter);
+        
+        // Transform API work items to local format
+        const transformed: WorkItem[] = (response.workItems || []).map((item: APIWorkItem) => ({
+          id: item.id,
+          type: item.type,
+          step: item.step,
+          patientName: item.patient_name,
+          description: item.description,
+          provider: item.provider,
+          payer: item.payer,
+          value: item.value,
+          valueLabel: item.value_label,
+          deadline: item.deadline_label || 'No deadline',
+          urgency: item.urgency,
+        }));
+        
+        setWorkItems(transformed);
+      } catch (err) {
+        console.error('Error loading work items:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load work items');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWorkItems();
+  }, [typeFilter, stepFilter]);
 
   // Filter work items
   const filteredItems = workItems.filter(item => {
@@ -480,6 +455,19 @@ export function TodayScreen({ onOpenCase }: TodayScreenProps) {
 
           {/* Table */}
           <div className="w-full overflow-x-auto">
+            {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-[13px] text-[#6a7282]">Loading work items...</div>
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-[13px] text-red-600">Error: {error}</div>
+                </div>
+              ) : filteredItems.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-[13px] text-[#6a7282]">No work items found</div>
+                </div>
+              ) : (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
@@ -507,7 +495,7 @@ export function TodayScreen({ onOpenCase }: TodayScreenProps) {
                 {filteredItems.map((item) => (
                   <tr 
                     key={item.id} 
-                    onClick={() => onOpenCase(item.id)}
+                    onClick={() => item.type === 'visit' ? onOpenVisit(item.id) : onOpenCase(item.id)}
                     className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer group"
                   >
                     <td className="px-3 py-3">
@@ -566,6 +554,7 @@ export function TodayScreen({ onOpenCase }: TodayScreenProps) {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
         </div>
 

@@ -17,7 +17,11 @@ import { VisitDetailScreen } from './components/VisitDetailScreen';
 import { VisitRecordScreen } from './components/VisitRecordScreen';
 import { VisitApprovedScreen } from './components/VisitApprovedScreen';
 import { EligibilityScreen } from './components/EligibilityScreen';
-import { PreVisitV2Screen } from './components/PreVisitV2Screen';
+import { PreVisitScreen } from './components/PreVisitV2Screen';
+import { DocumentationCodingScreen } from './components/DocumentationCodingScreen';
+import { ParserScreen } from './components/ParserScreen';
+import { AuthWorkspaceScreen } from './components/AuthWorkspaceScreen';
+import { EligibilityWorkspaceScreen } from './components/EligibilityWorkspaceScreen';
 import { VoBDemoScreen } from './components/VoBDemoScreen';
 
 function Text() {
@@ -74,17 +78,16 @@ function Button({ label, active, onClick }: { label: string; active?: boolean; o
   );
 }
 
-function List({ currentView, onNavigate, onNavigateToEligibility, onNavigateToIntake, onNavigateToTemplates }: { currentView: string; onNavigate: (view: 'today' | 'disputes' | 'visits') => void; onNavigateToEligibility: () => void; onNavigateToIntake: () => void; onNavigateToTemplates: () => void }) {
+function List({ currentView, onNavigate, onNavigateToPreVisit, onNavigateToIntake, onNavigateToTemplates }: { currentView: string; onNavigate: (view: 'today' | 'disputes' | 'visits') => void; onNavigateToPreVisit: () => void; onNavigateToIntake: () => void; onNavigateToTemplates: () => void }) {
   return (
     <div className="absolute content-stretch flex flex-col gap-[4px] items-start left-[12px] top-[80px] w-[232px]">
       <Button label="Home" active={currentView === 'today'} onClick={() => onNavigate('today')} />
-      <Button label="Pre-Visit" active={currentView === 'eligibility'} onClick={onNavigateToEligibility} />
-      <Button label="Pre-Visit v2" active={currentView === 'pre-visit-v2'} onClick={() => onNavigate('pre-visit-v2' as any)} />
+      <Button label="Pre-Visit" active={currentView === 'pre-visit' || currentView === 'auth-workspace'} onClick={onNavigateToPreVisit} />
+      <Button label="Documentation & Coding" active={currentView === 'doc-coding'} onClick={() => onNavigate('doc-coding' as any)} />
       <Button label="Visits" active={currentView === 'visits' || currentView === 'visit-detail' || currentView === 'visit-record' || currentView === 'visit-approved'} onClick={() => onNavigate('visits')} />
       <Button label="Disputes" active={currentView === 'disputes' || currentView.startsWith('case-detail')} onClick={() => onNavigate('disputes')} />
       <Button label="Diagnostics" active={currentView === 'intake'} onClick={onNavigateToIntake} />
       <Button label="Templates" active={currentView === 'templates' || currentView.startsWith('template-')} onClick={onNavigateToTemplates} />
-      <Button label="VoB Demo" active={currentView === 'vob-demo'} onClick={() => onNavigate('vob-demo' as any)} />
     </div>
   );
 }
@@ -188,12 +191,12 @@ function Container4({ onNavigateToDesignSystem }: { onNavigateToDesignSystem: ()
   );
 }
 
-function Sidebar({ currentView, onNavigate, onNavigateToEligibility, onNavigateToIntake, onNavigateToTemplates, onNavigateToDesignSystem }: { currentView: string; onNavigate: (view: 'today' | 'disputes' | 'visits') => void; onNavigateToEligibility: () => void; onNavigateToIntake: () => void; onNavigateToTemplates: () => void; onNavigateToDesignSystem: () => void }) {
+function Sidebar({ currentView, onNavigate, onNavigateToPreVisit, onNavigateToIntake, onNavigateToTemplates, onNavigateToDesignSystem }: { currentView: string; onNavigate: (view: 'today' | 'disputes' | 'visits') => void; onNavigateToPreVisit: () => void; onNavigateToIntake: () => void; onNavigateToTemplates: () => void; onNavigateToDesignSystem: () => void }) {
   return (
     <div className="bg-[#f5f5f7] h-full relative shrink-0 w-[186px] flex flex-col">
       <div className="bg-clip-padding border-0 border-[transparent] border-solid box-border h-full relative w-[186px] flex flex-col">
         <Container1 />
-        <List currentView={currentView} onNavigate={onNavigate} onNavigateToEligibility={onNavigateToEligibility} onNavigateToIntake={onNavigateToIntake} onNavigateToTemplates={onNavigateToTemplates} />
+        <List currentView={currentView} onNavigate={onNavigate} onNavigateToPreVisit={onNavigateToPreVisit} onNavigateToIntake={onNavigateToIntake} onNavigateToTemplates={onNavigateToTemplates} />
         <div className="flex-1" />
         <Container4 onNavigateToDesignSystem={onNavigateToDesignSystem} />
       </div>
@@ -202,8 +205,10 @@ function Sidebar({ currentView, onNavigate, onNavigateToEligibility, onNavigateT
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'today' | 'disputes' | 'visits' | 'eligibility' | 'pre-visit-v2' | 'visit-detail' | 'visit-record' | 'visit-approved' | 'intake' | 'templates' | 'template-1' | 'template-2' | 'template-3' | 'template-4' | 'case-detail' | 'case-detail-idr' | 'case-detail-appeal' | 'design-system' | 'vob-demo'>('today');
+  const [currentView, setCurrentView] = useState<'today' | 'disputes' | 'visits' | 'eligibility' | 'pre-visit-v2' | 'visit-detail' | 'visit-record' | 'visit-approved' | 'intake' | 'templates' | 'template-1' | 'template-2' | 'template-3' | 'template-4' | 'case-detail' | 'case-detail-idr' | 'case-detail-appeal' | 'design-system'>('today');
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [authStatus, setAuthStatus] = useState<'needed' | 'draft-ready' | 'submitted' | 'approved' | 'denied'>('draft-ready');
+  const [eligibilityData, setEligibilityData] = useState<any>(null);
 
   const handleOpenCase = (id: string) => {
     setSelectedCaseId(id);
@@ -232,7 +237,7 @@ export default function App() {
   };
 
   const handleViewVisit = (visitId: string) => {
-    setCurrentView('visit-detail');
+    setCurrentView('visit-approved');
   };
 
   const handleRecordVisit = (visitId: string) => {
@@ -240,21 +245,35 @@ export default function App() {
   };
 
   const handleSendToAthena = (visitId: string) => {
-    setCurrentView('visit-approved');
+    setCurrentView('visit-detail');
   };
 
   const handleBackToVisits = () => {
     setCurrentView('visits');
   };
 
+  const handleOpenAuthWorkspace = (status: 'needed' | 'draft-ready' | 'submitted' | 'approved' | 'denied' = 'draft-ready') => {
+    setAuthStatus(status);
+    setCurrentView('auth-workspace');
+  };
+
+  const handleOpenEligibilityWorkspace = (data?: any) => {
+    setEligibilityData(data);
+    setCurrentView('eligibility-workspace');
+  };
+
+  const handleBackToPreVisit = () => {
+    setCurrentView('pre-visit');
+  };
+
   return (
     <div className="bg-[#f5f5f7] h-screen w-screen overflow-hidden flex">
-      <Sidebar currentView={currentView} onNavigate={setCurrentView} onNavigateToEligibility={() => setCurrentView('eligibility')} onNavigateToIntake={() => setCurrentView('intake')} onNavigateToTemplates={() => setCurrentView('templates')} onNavigateToDesignSystem={() => setCurrentView('design-system')} />
+      <Sidebar currentView={currentView} onNavigate={setCurrentView} onNavigateToPreVisit={() => setCurrentView('pre-visit')} onNavigateToIntake={() => setCurrentView('intake')} onNavigateToTemplates={() => setCurrentView('templates')} onNavigateToDesignSystem={() => setCurrentView('design-system')} />
       
       {/* Main Content */}
       <div className="flex-1 bg-[#f5f5f7] h-full overflow-auto">
         {currentView === 'today' ? (
-          <TodayScreen onOpenCase={handleOpenCase} />
+          <TodayScreen onOpenCase={handleOpenCase} onOpenVisit={handleViewVisit} />
         ) : currentView === 'visits' ? (
           <VisitsScreen onViewVisit={handleViewVisit} onRecordVisit={handleRecordVisit} onSendToAthena={handleSendToAthena} />
         ) : currentView === 'visit-detail' ? (
@@ -265,10 +284,16 @@ export default function App() {
           <VisitApprovedScreen onBack={handleBackToVisits} />
         ) : currentView === 'disputes' ? (
           <DisputesScreen onOpenCase={handleOpenCase} />
-        ) : currentView === 'eligibility' ? (
-          <EligibilityScreen />
-        ) : currentView === 'pre-visit-v2' ? (
-          <PreVisitV2Screen />
+        ) : currentView === 'pre-visit' ? (
+          <PreVisitScreen onOpenAuthWorkspace={handleOpenAuthWorkspace} onOpenEligibilityWorkspace={handleOpenEligibilityWorkspace} />
+        ) : currentView === 'auth-workspace' ? (
+          <AuthWorkspaceScreen onBack={handleBackToPreVisit} initialAuthStatus={authStatus} />
+        ) : currentView === 'eligibility-workspace' ? (
+          <EligibilityWorkspaceScreen onBack={handleBackToPreVisit} {...eligibilityData} />
+        ) : currentView === 'doc-coding' ? (
+          <DocumentationCodingScreen />
+        ) : currentView === 'parser' ? (
+          <ParserScreen />
         ) : currentView === 'intake' ? (
           <IntakeScreen />
         ) : currentView === 'templates' ? (
