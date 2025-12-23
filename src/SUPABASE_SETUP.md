@@ -258,6 +258,11 @@ The backend uses these Supabase environment variables (automatically configured)
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
+**Security note (important):** The Edge Function in `src/supabase/functions/server/` will use
+`SUPABASE_ANON_KEY` if provided. If `SUPABASE_ANON_KEY` is *not* set, it falls back to
+service-role mode and will require an `EDGE_INTERNAL_TOKEN` to be sent with requests
+(`x-edge-internal-token: ...`), otherwise it returns `401`.
+
 The frontend uses (from `/utils/supabase/info.tsx`):
 - `projectId`
 - `publicAnonKey`

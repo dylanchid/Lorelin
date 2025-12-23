@@ -5,11 +5,51 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import * as kv from "./kv_store.tsx";
 const app = new Hono();
 
-// Create Supabase client
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+const isServiceRoleMode = !SUPABASE_ANON_KEY;
 const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY || SUPABASE_SERVICE_ROLE_KEY,
 );
+
+// If SUPABASE_ANON_KEY isn't configured, we fall back to service-role.
+// In that case, we MUST gate access behind an internal token to avoid exposing
+// service-role privileges to the public internet.
+if (isServiceRoleMode) {
+  const EDGE_INTERNAL_TOKEN = Deno.env.get('EDGE_INTERNAL_TOKEN') ?? '';
+
+  app.use('/make-server-e8ce19db/*', async (c, next) => {
+    const pathname = new URL(c.req.url).pathname;
+
+    // Always allow health checks.
+    if (pathname.endsWith('/health')) {
+      return next();
+    }
+
+    if (!EDGE_INTERNAL_TOKEN) {
+      return c.json(
+        { error: 'EDGE_INTERNAL_TOKEN is required when running in service-role mode' },
+        500,
+      );
+    }
+
+    const presentedToken =
+      c.req.header('x-edge-internal-token') ??
+      c.req
+        .header('authorization')
+        ?.replace(/^Bearer\s+/i, '')
+        .trim();
+
+    if (!presentedToken || presentedToken !== EDGE_INTERNAL_TOKEN) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    return next();
+  });
+}
 
 // Enable logger
 app.use('*', logger(console.log));
